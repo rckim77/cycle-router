@@ -236,6 +236,19 @@ h3 {
   gap: 12px;
 }
 
+.start-address-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: -4px;
+}
+
+.default-start-hint {
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 label {
   display: flex;
   flex-direction: column;

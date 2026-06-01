@@ -88,10 +88,17 @@
                 id="startAddress"
                 name="startAddress"
                 type="text"
-                value="Gantry Plaza State Park, Long Island City, NY"
+                placeholder="Enter a NYC start address"
                 autocomplete="street-address"
               />
             </label>
+            <div class="start-address-actions">
+              <button class="text-button" id="saveDefaultStartButton" type="button">Save as default start</button>
+              <button class="text-button" id="clearDefaultStartButton" type="button" hidden>Clear default</button>
+            </div>
+            <p class="muted default-start-hint" id="defaultStartHint">
+              No default start saved. Enter an address and save one for quicker planning.
+            </p>
 
             <label for="routePrompt">Route description</label>
             <div class="input-stack" id="voiceInputStack">
@@ -158,6 +165,6 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=17"></script>
+    <script src="./app.js?v=18"></script>
   </body>
 </html>

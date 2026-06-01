@@ -1,6 +1,6 @@
 const NYC_CENTER = [40.73061, -73.935242];
-const DEFAULT_START_ADDRESS = "Gantry Plaza State Park, Long Island City, NY";
 const STORAGE_KEY = "cycle-router.savedRoutes";
+const DEFAULT_START_KEY = "cycle-router.defaultStart";
 const THEME_KEY = "cycle-router.theme";
 const PANEL_COLLAPSED_KEY = "cycle-router.panelCollapsed";
 const ROUTING_BASE = "https://routing.openstreetmap.de/routed-bike/route/v1/bike";
@@ -31,14 +31,6 @@ const THEME_ICONS = {
     </svg>
   `,
 };
-const DEFAULT_START = {
-  id: "gantry-park-landing",
-  name: "Gantry Park Landing",
-  aliases: ["gantry park landing", "gantry landing", "gantry plaza", "gantry plaza state park"],
-  coord: [40.7438687, -73.9583437],
-  known: true,
-};
-
 function routeCue(id, name, coord, options = {}) {
   return {
     id,
@@ -157,7 +149,6 @@ const BROOKLYN_SOUTH_DESTINATIONS = new Set([
 ]);
 
 const LANDMARKS = [
-  DEFAULT_START,
   { id: "central-park", name: "Central Park", aliases: ["central park", "columbus circle"], coord: [40.76437, -73.97319] },
   { id: "prospect-park", name: "Prospect Park", aliases: ["prospect park", "park slope"], coord: [40.66177, -73.97109] },
   { id: "hudson-river-greenway", name: "Hudson River Greenway", aliases: ["hudson river greenway", "hudson greenway", "hudson west side highway", "west side highway", "west side path"], coord: [40.7359, -74.0107] },
@@ -168,7 +159,7 @@ const LANDMARKS = [
   { id: "hudson-yards", name: "Hudson Yards", aliases: ["hudson yards", "chelsea"], coord: [40.754, -74.002] },
   { id: "riverside-park", name: "Riverside Park", aliases: ["riverside park", "upper west side"], coord: [40.8012, -73.9707] },
   { id: "george-washington-bridge", name: "George Washington Bridge", aliases: ["george washington bridge", "gw bridge", "gwb"], coord: [40.8517, -73.9527] },
-  { id: "gantry-plaza", name: "Gantry Plaza State Park", aliases: ["gantry plaza", "long island city", "lic"], coord: [40.74467, -73.95701] },
+  { id: "long-island-city", name: "Long Island City", aliases: ["long island city", "lic"], coord: [40.74467, -73.95701] },
   { id: "astoria-park", name: "Astoria Park", aliases: ["astoria park", "astoria"], coord: [40.7792, -73.9228] },
   { id: "randalls-island", name: "Randall's Island", aliases: ["randall's island", "randalls island", "randall island"], coord: [40.79334, -73.92976] },
   { id: "coney-island", name: "Coney Island", aliases: ["coney island"], coord: [40.5749, -73.985] },
@@ -189,6 +180,9 @@ const STYLE_NOTES = {
 const elements = {
   form: document.querySelector("#routeForm"),
   startAddress: document.querySelector("#startAddress"),
+  saveDefaultStartButton: document.querySelector("#saveDefaultStartButton"),
+  clearDefaultStartButton: document.querySelector("#clearDefaultStartButton"),
+  defaultStartHint: document.querySelector("#defaultStartHint"),
   prompt: document.querySelector("#routePrompt"),
   style: document.querySelector("#routeStyle"),
   routeSummary: document.querySelector("#routeSummary"),
@@ -561,14 +555,15 @@ async function planRoute(prompt) {
 
   const start = await resolveStartAddress();
   const wantsReturnToStart = Boolean(
-    normalized.match(/\b(loop|round trip|out and back|out-and-back|return|back to|back home)\b/)
-    && normalized.match(/\b(?:long island city|lic|back home|gantry)\b/),
+    wantsLoop
+    && (
+      /\bback home\b/.test(normalized)
+      || (/\b(?:long island city|lic)\b/.test(normalized) && startsInLic(start))
+    ),
   );
   const stopLandmarks = mentioned.filter((landmark) => {
     if (landmark.id === start.id) return false;
-    if (wantsReturnToStart && startsInLic(start) && ["gantry-plaza", "gantry-park-landing"].includes(landmark.id)) {
-      return false;
-    }
+    if (wantsReturnToStart && isSamePlace(landmark, start)) return false;
     return true;
   });
   const expandedStops = expandContextualStops(
@@ -748,20 +743,94 @@ async function finalizePlannedRoute(waypoints) {
   };
 }
 
-async function resolveStartAddress() {
-  const rawAddress = elements.startAddress.value.trim();
-  const normalized = rawAddress.toLowerCase();
+function getSavedDefaultStart() {
+  try {
+    const stored = localStorage.getItem(DEFAULT_START_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (!parsed?.address || !Array.isArray(parsed.coord) || parsed.coord.length !== 2) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
-  if (!normalized || DEFAULT_START.aliases.some((alias) => normalized.includes(alias))) {
-    return { ...DEFAULT_START };
+function setSavedDefaultStart(entry) {
+  localStorage.setItem(DEFAULT_START_KEY, JSON.stringify(entry));
+}
+
+function clearSavedDefaultStart() {
+  localStorage.removeItem(DEFAULT_START_KEY);
+}
+
+function waypointFromSavedDefault(saved) {
+  return {
+    id: "user-default-start",
+    name: saved.name || saved.address,
+    coord: saved.coord,
+    known: true,
+  };
+}
+
+function updateDefaultStartUi() {
+  const saved = getSavedDefaultStart();
+  const hasSaved = Boolean(saved);
+
+  if (elements.clearDefaultStartButton) {
+    elements.clearDefaultStartButton.hidden = !hasSaved;
   }
 
+  if (elements.defaultStartHint) {
+    elements.defaultStartHint.textContent = hasSaved
+      ? `Default start: ${saved.address}`
+      : "No default start saved. Enter an address and save one for quicker planning.";
+  }
+}
+
+function applySavedDefaultStartToField() {
+  const saved = getSavedDefaultStart();
+  if (saved?.address) {
+    elements.startAddress.value = saved.address;
+  }
+}
+
+async function saveDefaultStartFromField() {
+  const address = elements.startAddress.value.trim();
+  if (!address) {
+    throw new Error("Enter a start address before saving your default.");
+  }
+
+  const waypoint = await geocodePlace(address);
+  setSavedDefaultStart({
+    address,
+    name: waypoint.name,
+    coord: waypoint.coord,
+  });
+  updateDefaultStartUi();
+}
+
+async function resolveStartAddress() {
+  const rawAddress = elements.startAddress.value.trim();
+  const savedDefault = getSavedDefaultStart();
+
+  if (!rawAddress) {
+    if (savedDefault) {
+      return waypointFromSavedDefault(savedDefault);
+    }
+    throw new Error("Enter a start address or save a default start address.");
+  }
+
+  const normalized = rawAddress.toLowerCase();
   const known = LANDMARKS.find((landmark) => {
     return landmark.aliases.some((alias) => normalized.includes(alias));
   });
 
   if (known) {
     return { ...known, known: true };
+  }
+
+  if (savedDefault && rawAddress === savedDefault.address) {
+    return waypointFromSavedDefault(savedDefault);
   }
 
   return geocodePlace(rawAddress);
@@ -809,7 +878,8 @@ function expandContextualStops(waypoints, normalizedPrompt, start) {
   const wantsCentralParkLoop = /\b(?:around central park|central park loop|loop around central park|full central park loop)\b/.test(normalizedPrompt);
   const wantsWestSideGreenway = /\b(?:hudson|west side highway|west side path|west side greenway)\b/.test(normalizedPrompt);
   const wantsBrooklynBridge = /\bbrooklyn bridge\b/.test(normalizedPrompt);
-  const wantsLicReturn = /\b(?:long island city|lic|back home|back to|return|gantry)\b/.test(normalizedPrompt);
+  const wantsLicReturn = startsInLic(start)
+    && /\b(?:long island city|lic|back home)\b/.test(normalizedPrompt);
   const wantsKentAve = /\b(?:kent ave|kent avenue|kent ave bike path|kent avenue bike path)\b/.test(normalizedPrompt);
   const wantsRockaway = /\b(?:rockaway beach|rockaway|rockaways|rockaway peninsula|rockaway boardwalk)\b/.test(normalizedPrompt);
   const wantsLoop = /\b(loop|round trip|out and back|out-and-back|return|back to|back home)\b/.test(normalizedPrompt);
@@ -851,7 +921,10 @@ function expandContextualStops(waypoints, normalizedPrompt, start) {
 }
 
 function startsInLic(start) {
-  return ["gantry-park-landing", "gantry-plaza"].includes(start.id) || haversineMiles(start.coord, DEFAULT_START.coord) < 1.4;
+  return classifyBorough(start.coord) === "queens"
+    && start.coord[0] >= 40.73
+    && start.coord[0] <= 40.77
+    && start.coord[1] > -73.98;
 }
 
 function isSamePlace(a, b) {
@@ -916,7 +989,7 @@ function chooseTurnaround(start, targetMiles, normalizedPrompt) {
     "battery-park",
     "riverside-park",
     "astoria-park",
-    "gantry-plaza",
+    "long-island-city",
   ]) : new Set();
 
   const scored = candidates.map((landmark) => {
@@ -1742,6 +1815,25 @@ function bindEvents() {
     renderSavedRoutes();
   });
 
+  elements.saveDefaultStartButton.addEventListener("click", () => {
+    saveDefaultStartFromField()
+      .then(() => {
+        elements.saveDefaultStartButton.textContent = "Saved";
+        window.setTimeout(() => {
+          elements.saveDefaultStartButton.textContent = "Save as default start";
+        }, 1400);
+      })
+      .catch((error) => {
+        renderError(error);
+        setRouteGenerationState("error");
+      });
+  });
+
+  elements.clearDefaultStartButton.addEventListener("click", () => {
+    clearSavedDefaultStart();
+    updateDefaultStartUi();
+  });
+
   elements.savedRoutes.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-route-id]");
     if (!button) return;
@@ -1749,7 +1841,7 @@ function bindEvents() {
     const route = getSavedRoutes().find((candidate) => candidate.id === button.dataset.routeId);
     if (!route) return;
     activeRoute = route;
-    elements.startAddress.value = route.startAddress ?? DEFAULT_START_ADDRESS;
+    elements.startAddress.value = route.startAddress ?? getSavedDefaultStart()?.address ?? "";
     elements.prompt.value = route.prompt;
     elements.style.value = normalizeStyle(route.style);
     setActivePanel("plan");
@@ -1788,16 +1880,18 @@ function boot() {
   setPanelCollapsed(initiallyCollapsed, false, { animate: false });
   updateSheetOffset();
   renderSavedRoutes();
+  updateDefaultStartUi();
 
   const sharedRoute = routeFromHash();
   if (sharedRoute?.points?.length > 1) {
     activeRoute = sharedRoute;
-    elements.startAddress.value = sharedRoute.startAddress ?? DEFAULT_START_ADDRESS;
+    elements.startAddress.value = sharedRoute.startAddress ?? getSavedDefaultStart()?.address ?? "";
     elements.prompt.value = sharedRoute.prompt ?? "";
     elements.style.value = normalizeStyle(sharedRoute.style);
     renderRoute(sharedRoute);
     setRouteGenerationState("ready");
   } else {
+    applySavedDefaultStartToField();
     elements.routeSummary.hidden = true;
     elements.routeSummary.innerHTML = "";
     elements.distanceReadout.textContent = "-";
