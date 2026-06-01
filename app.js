@@ -199,7 +199,6 @@ const elements = {
   timeReadout: document.querySelector("#timeReadout"),
   saveButton: document.querySelector("#saveButton"),
   shareButton: document.querySelector("#shareButton"),
-  locateButton: document.querySelector("#locateButton"),
   themeButton: document.querySelector("#themeButton"),
   clearSavedButton: document.querySelector("#clearSavedButton"),
   savedRoutes: document.querySelector("#savedRoutes"),
@@ -1802,10 +1801,6 @@ function bindEvents() {
         elements.shareButton.textContent = "Copy Link";
       }, 1400);
     });
-  });
-
-  elements.locateButton.addEventListener("click", () => {
-    map.setView(NYC_CENTER, 11);
   });
 
   elements.themeButton.addEventListener("click", cycleTheme);

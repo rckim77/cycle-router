@@ -468,6 +468,12 @@ select:focus {
   max-height: min(52svh, 500px);
   opacity: 1;
   transform: translateY(0);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.control-panel-body::-webkit-scrollbar {
+  display: none;
 }
 
 .control-panel.is-collapsed .control-panel-body {
@@ -927,6 +933,12 @@ select:focus {
     border-right: 1px solid var(--line);
     border-radius: 0;
     box-shadow: none;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .control-panel::-webkit-scrollbar {
+    display: none;
   }
 
   .map-panel {
