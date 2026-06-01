@@ -5,7 +5,7 @@ A static browser tool for planning bike rides in and around New York City from n
 ## Features
 
 - Describe a route in natural language, such as "a scenic waterfront loop", "to Central Park", or "loop around Central Park, down the Hudson River Greenway, across Brooklyn Bridge, then back home".
-- Starts from `214 50th Ave, Long Island City, NY` by default, with an editable start address field.
+- Starts from Gantry Plaza State Park in Long Island City by default, with an editable start address field.
 - Choose a target range: `0-10 miles`, `10-20 miles`, or `20+ miles`.
 - Use browser voice input where `SpeechRecognition` is supported.
 - View the generated ride on an OpenStreetMap-powered Leaflet map.

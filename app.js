@@ -1,4 +1,5 @@
 const NYC_CENTER = [40.73061, -73.935242];
+const DEFAULT_START_ADDRESS = "Gantry Plaza State Park, Long Island City, NY";
 const STORAGE_KEY = "cycle-router.savedRoutes";
 const THEME_KEY = "cycle-router.theme";
 const PANEL_COLLAPSED_KEY = "cycle-router.panelCollapsed";
@@ -33,7 +34,7 @@ const THEME_ICONS = {
 const DEFAULT_START = {
   id: "gantry-park-landing",
   name: "Gantry Park Landing",
-  aliases: ["214 50th ave", "214 50th avenue", "gantry park landing", "gantry landing"],
+  aliases: ["gantry park landing", "gantry landing", "gantry plaza", "gantry plaza state park"],
   coord: [40.7438687, -73.9583437],
   known: true,
 };
@@ -561,7 +562,7 @@ async function planRoute(prompt) {
   const start = await resolveStartAddress();
   const wantsReturnToStart = Boolean(
     normalized.match(/\b(loop|round trip|out and back|out-and-back|return|back to|back home)\b/)
-    && normalized.match(/\b(?:long island city|lic|214 50th|50th ave|back home|gantry)\b/),
+    && normalized.match(/\b(?:long island city|lic|back home|gantry)\b/),
   );
   const stopLandmarks = mentioned.filter((landmark) => {
     if (landmark.id === start.id) return false;
@@ -808,7 +809,7 @@ function expandContextualStops(waypoints, normalizedPrompt, start) {
   const wantsCentralParkLoop = /\b(?:around central park|central park loop|loop around central park|full central park loop)\b/.test(normalizedPrompt);
   const wantsWestSideGreenway = /\b(?:hudson|west side highway|west side path|west side greenway)\b/.test(normalizedPrompt);
   const wantsBrooklynBridge = /\bbrooklyn bridge\b/.test(normalizedPrompt);
-  const wantsLicReturn = /\b(?:long island city|lic|214 50th|50th ave|back home|back to|return)\b/.test(normalizedPrompt);
+  const wantsLicReturn = /\b(?:long island city|lic|back home|back to|return|gantry)\b/.test(normalizedPrompt);
   const wantsKentAve = /\b(?:kent ave|kent avenue|kent ave bike path|kent avenue bike path)\b/.test(normalizedPrompt);
   const wantsRockaway = /\b(?:rockaway beach|rockaway|rockaways|rockaway peninsula|rockaway boardwalk)\b/.test(normalizedPrompt);
   const wantsLoop = /\b(loop|round trip|out and back|out-and-back|return|back to|back home)\b/.test(normalizedPrompt);
@@ -1748,7 +1749,7 @@ function bindEvents() {
     const route = getSavedRoutes().find((candidate) => candidate.id === button.dataset.routeId);
     if (!route) return;
     activeRoute = route;
-    elements.startAddress.value = route.startAddress ?? "214 50th Ave, Long Island City, NY";
+    elements.startAddress.value = route.startAddress ?? DEFAULT_START_ADDRESS;
     elements.prompt.value = route.prompt;
     elements.style.value = normalizeStyle(route.style);
     setActivePanel("plan");
@@ -1791,7 +1792,7 @@ function boot() {
   const sharedRoute = routeFromHash();
   if (sharedRoute?.points?.length > 1) {
     activeRoute = sharedRoute;
-    elements.startAddress.value = sharedRoute.startAddress ?? "214 50th Ave, Long Island City, NY";
+    elements.startAddress.value = sharedRoute.startAddress ?? DEFAULT_START_ADDRESS;
     elements.prompt.value = sharedRoute.prompt ?? "";
     elements.style.value = normalizeStyle(sharedRoute.style);
     renderRoute(sharedRoute);
