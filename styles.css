@@ -236,17 +236,68 @@ h3 {
   gap: 12px;
 }
 
+.start-address-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.start-address-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.start-address-row input {
+  min-width: 0;
+}
+
 .start-address-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
-  margin-top: -4px;
 }
 
-.default-start-hint {
-  margin: -4px 0 0;
-  font-size: 0.82rem;
-  line-height: 1.35;
+.icon-button.save-default-button {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.icon-button.save-default-button:not(:disabled):hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.icon-button.save-default-button:focus-visible {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(22, 116, 71, 0.16);
+}
+
+.icon-button.save-default-button.is-saved {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(22, 116, 71, 0.08);
+}
+
+.icon-button.save-default-button:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+.icon-button.save-default-button svg {
+  width: 17px;
+  height: 17px;
 }
 
 label {
@@ -552,16 +603,13 @@ select:focus {
 }
 
 .route-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--overlay-surface-radius);
-  background: var(--panel-soft);
-  color: var(--ink);
-  font-size: 0.86rem;
-  font-weight: 700;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
 }
 
 .route-status[hidden] {
@@ -584,6 +632,17 @@ select:focus {
   }
 }
 
+.button-spinner {
+  display: none;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: route-spin 0.8s linear infinite;
+}
+
 .primary-button,
 .secondary-button,
 .text-button {
@@ -599,8 +658,16 @@ select:focus {
 }
 
 .primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   background: var(--green);
   color: white;
+}
+
+.primary-button.is-loading .button-spinner {
+  display: inline-block;
 }
 
 .primary-button:hover {

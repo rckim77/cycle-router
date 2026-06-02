@@ -21,7 +21,7 @@
         document.documentElement.dataset.theme = "light";
       }
     </script>
-    <link rel="stylesheet" href="./styles.css?v=19" />
+    <link rel="stylesheet" href="./styles.css?v=21" />
   </head>
   <body>
     <main class="app-shell">
@@ -79,23 +79,36 @@
         <div id="controlPanelBody" class="control-panel-body">
         <div id="planTabPanel" class="tab-panel" role="tabpanel" aria-labelledby="planTabButton">
           <form id="routeForm" class="route-form">
-            <label for="startAddress">
-              <span>Start address</span>
-              <input
-                id="startAddress"
-                name="startAddress"
-                type="text"
-                placeholder="Enter a NYC start address"
-                autocomplete="street-address"
-              />
-            </label>
-            <div class="start-address-actions">
-              <button class="text-button" id="saveDefaultStartButton" type="button">Save as default start</button>
-              <button class="text-button" id="clearDefaultStartButton" type="button" hidden>Clear default</button>
+            <div class="start-address-field">
+              <div class="start-address-row">
+                <input
+                  id="startAddress"
+                  name="startAddress"
+                  type="text"
+                  placeholder="Enter a NYC start address"
+                  autocomplete="street-address"
+                  aria-label="Start address"
+                />
+                <button
+                  class="icon-button save-default-button"
+                  id="saveDefaultStartButton"
+                  type="button"
+                  title="Enter a start address to save"
+                  aria-label="Enter a start address to save"
+                  disabled
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M6 3h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+                    <path d="M14 3v6H8V3"></path>
+                    <path d="M8 13h8"></path>
+                    <path d="M8 16h5"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="start-address-actions">
+                <button class="text-button" id="clearDefaultStartButton" type="button" hidden>Clear default</button>
+              </div>
             </div>
-            <p class="muted default-start-hint" id="defaultStartHint">
-              No default start saved. Enter an address and save one for quicker planning.
-            </p>
 
             <label for="routePrompt">Route description</label>
             <div class="input-stack" id="voiceInputStack">
@@ -130,7 +143,10 @@
             </label>
 
             <div class="button-row" id="buttonRow">
-              <button class="primary-button" id="mapRouteButton" type="submit">Map route</button>
+              <button class="primary-button" id="mapRouteButton" type="submit">
+                <span class="button-spinner" aria-hidden="true"></span>
+                <span id="mapRouteButtonText">Map route</span>
+              </button>
               <button class="secondary-button" id="saveButton" type="button" hidden>Save</button>
               <button class="secondary-button" id="shareButton" type="button" hidden>Copy Link</button>
             </div>
@@ -162,6 +178,6 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=19"></script>
+    <script src="./app.js?v=21"></script>
   </body>
 </html>

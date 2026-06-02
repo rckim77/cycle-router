@@ -182,13 +182,13 @@ const elements = {
   startAddress: document.querySelector("#startAddress"),
   saveDefaultStartButton: document.querySelector("#saveDefaultStartButton"),
   clearDefaultStartButton: document.querySelector("#clearDefaultStartButton"),
-  defaultStartHint: document.querySelector("#defaultStartHint"),
   prompt: document.querySelector("#routePrompt"),
   style: document.querySelector("#routeStyle"),
   routeSummary: document.querySelector("#routeSummary"),
   routeStatus: document.querySelector("#routeStatus"),
   routeStatusText: document.querySelector("#routeStatusText"),
   mapRouteButton: document.querySelector("#mapRouteButton"),
+  mapRouteButtonText: document.querySelector("#mapRouteButtonText"),
   buttonRow: document.querySelector("#buttonRow"),
   mapPanel: document.querySelector(".map-panel"),
   mapStats: document.querySelector(".map-stats"),
@@ -778,11 +778,24 @@ function updateDefaultStartUi() {
   if (elements.clearDefaultStartButton) {
     elements.clearDefaultStartButton.hidden = !hasSaved;
   }
+}
 
-  if (elements.defaultStartHint) {
-    elements.defaultStartHint.textContent = hasSaved
-      ? `Default start: ${saved.address}`
-      : "No default start saved. Enter an address and save one for quicker planning.";
+function updateSaveDefaultStartButtonState({ resetSaved = false } = {}) {
+  const button = elements.saveDefaultStartButton;
+  if (!button) return;
+
+  const hasAddress = elements.startAddress.value.trim().length > 0;
+
+  if (resetSaved) {
+    button.classList.remove("is-saved");
+  }
+
+  button.disabled = !hasAddress;
+
+  if (!button.classList.contains("is-saved")) {
+    const label = hasAddress ? "Save as default start" : "Enter a start address to save";
+    button.setAttribute("aria-label", label);
+    button.title = label;
   }
 }
 
@@ -791,6 +804,7 @@ function applySavedDefaultStartToField() {
   if (saved?.address) {
     elements.startAddress.value = saved.address;
   }
+  updateSaveDefaultStartButtonState();
 }
 
 async function saveDefaultStartFromField() {
@@ -1400,7 +1414,8 @@ function setRouteGenerationState(state, message = "") {
   }
 
   elements.mapRouteButton.disabled = isLoading;
-  elements.mapRouteButton.textContent = isLoading ? "Mapping…" : "Map route";
+  elements.mapRouteButton.classList.toggle("is-loading", isLoading);
+  elements.mapRouteButtonText.textContent = isLoading ? (message || "Mapping route…") : "Map route";
   elements.saveButton.hidden = !isReady;
   elements.shareButton.hidden = !isReady;
   elements.buttonRow.classList.toggle("has-generated-route", isReady);
@@ -1805,6 +1820,10 @@ function bindEvents() {
 
   elements.themeButton.addEventListener("click", cycleTheme);
 
+  elements.startAddress.addEventListener("input", () => {
+    updateSaveDefaultStartButtonState({ resetSaved: true });
+  });
+
   elements.clearSavedButton.addEventListener("click", () => {
     localStorage.removeItem(STORAGE_KEY);
     renderSavedRoutes();
@@ -1813,9 +1832,13 @@ function bindEvents() {
   elements.saveDefaultStartButton.addEventListener("click", () => {
     saveDefaultStartFromField()
       .then(() => {
-        elements.saveDefaultStartButton.textContent = "Saved";
+        const button = elements.saveDefaultStartButton;
+        button.classList.add("is-saved");
+        button.setAttribute("aria-label", "Default start saved");
+        button.title = "Default start saved";
         window.setTimeout(() => {
-          elements.saveDefaultStartButton.textContent = "Save as default start";
+          button.classList.remove("is-saved");
+          updateSaveDefaultStartButtonState();
         }, 1400);
       })
       .catch((error) => {
@@ -1827,6 +1850,7 @@ function bindEvents() {
   elements.clearDefaultStartButton.addEventListener("click", () => {
     clearSavedDefaultStart();
     updateDefaultStartUi();
+    updateSaveDefaultStartButtonState();
   });
 
   elements.savedRoutes.addEventListener("click", (event) => {
@@ -1837,6 +1861,7 @@ function bindEvents() {
     if (!route) return;
     activeRoute = route;
     elements.startAddress.value = route.startAddress ?? getSavedDefaultStart()?.address ?? "";
+    updateSaveDefaultStartButtonState({ resetSaved: true });
     elements.prompt.value = route.prompt;
     elements.style.value = normalizeStyle(route.style);
     setActivePanel("plan");
@@ -1881,12 +1906,14 @@ function boot() {
   if (sharedRoute?.points?.length > 1) {
     activeRoute = sharedRoute;
     elements.startAddress.value = sharedRoute.startAddress ?? getSavedDefaultStart()?.address ?? "";
+    updateSaveDefaultStartButtonState();
     elements.prompt.value = sharedRoute.prompt ?? "";
     elements.style.value = normalizeStyle(sharedRoute.style);
     renderRoute(sharedRoute);
     setRouteGenerationState("ready");
   } else {
     applySavedDefaultStartToField();
+    updateSaveDefaultStartButtonState();
     elements.routeSummary.hidden = true;
     elements.routeSummary.innerHTML = "";
     elements.distanceReadout.textContent = "-";
